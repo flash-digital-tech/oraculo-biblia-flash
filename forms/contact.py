@@ -9,7 +9,10 @@ from datetime import datetime
 import asyncio
 from key_config import API_KEY_STRIPE, URL_BASE, STRIPE_WEBHOOK_SECRET
 from config_handler import add_client_to_config
+from decouple import config
 
+
+WEBHOOK_URL = config("WEBHOOK_URL")
 
 app = FastAPI()
 
@@ -275,10 +278,6 @@ def cadastrar_cliente():
         except Exception as e:
             # Aqui você pode registrar o erro em um log ou apenas ignorá-lo
             pass  # Não exibe o erro na tela
-
-
-
-WEBHOOK_URL = st.secrets["WEBHOOK_URL"]
 
 
 def is_valid_email(email):
