@@ -21,14 +21,16 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from key_config import API_KEY_STRIPE, URL_BASE
+from decouple import config
 
 
 app = FastAPI()
 
 
+
 # --- Verifica se o token da API está nos segredos ---
-if 'REPLICATE_API_TOKEN' in st.secrets:
-    replicate_api = st.secrets['REPLICATE_API_TOKEN']
+if 'REPLICATE_API_TOKEN':
+    replicate_api = config('REPLICATE_API_TOKEN')
 else:
     # Se a chave não está nos segredos, define um valor padrão ou continua sem o token
     replicate_api = None
