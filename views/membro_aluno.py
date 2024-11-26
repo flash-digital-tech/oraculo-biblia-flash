@@ -295,13 +295,22 @@ def showMembroAluno():
             st.write(prompt)
 
 
-    # Generate a new response if last message is not from assistant
-    if st.session_state.messages[-1]["role"] != "assistant":
-        with st.chat_message("assistant", avatar="./src/img/mestre-biblia.png"):
-            response = generate_arctic_response()
-            full_response = st.write_stream(response)
-        message = {"role": "assistant", "content": full_response}
-        st.session_state.messages.append(message)
+    # Gera uma nova resposta se a última mensagem não for do assistente
+    try:
+        # Verifica se a lista de mensagens não está vazia
+        if st.session_state.messages and "role" in st.session_state.messages[-1]:
+            if st.session_state.messages[-1]["role"] != "assistant":
+                with st.chat_message("assistant", avatar="./src/img/mestre-biblia.png"):
+                    response = generate_arctic_response()
+                    full_response = st.write_stream(response)
+                message = {"role": "assistant", "content": full_response}
+                st.session_state.messages.append(message)
+        else:
+            st.warning("Não há mensagens disponíveis ou a estrutura da última mensagem está incorreta.")
+    except IndexError:
+        st.warning("Ocorreu um erro ao acessar a última mensagem: lista vazia.")
+    except KeyError as ke:
+        st.warning(f"Ocorreu um erro: {str(ke)}. A estrutura da mensagem pode estar incorreta.")
 
 
 
