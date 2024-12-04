@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, EmailStr
 import pandas as pd
 import os
+from PIL import Image
 import stripe
 from typing import Optional
 from datetime import datetime
