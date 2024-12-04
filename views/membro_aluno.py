@@ -328,7 +328,7 @@ def showMembroAluno():
         avatar_image = get_avatar_image()
         
         with st.chat_message("user", avatar=avatar_image):
-            st.image(avatar_image, width=100, height=100)  # Define a imagem para 100x100 pixels
+            st.image(avatar_image, width=100)  # Define a largura para 100 pixels (altura será ajustada automaticamente)
             st.write(prompt)
     
     # Generate a new response if last message is not from assistant
