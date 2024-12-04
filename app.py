@@ -121,16 +121,16 @@ if 'authentication_status' in st.session_state and st.session_state['authenticat
         st.stop()
 
     permissao_usuario = {
-        "admin": ["Home", "MESTRE BÍBLIA", "Membro/Aluno", "Criar Cliente","Criar Parceiro", "Financeiro", "Link de Pagamento", \
+        "admin": ["Apresentação", "MESTRE BÍBLIA", "Membro/Aluno", "Criar Cliente","Criar Parceiro", "Financeiro", "Link de Pagamento", \
                   "Webhook","Assinaturas","Split de Pagamentos",],
-        "parceiro": ["Home", "MESTRE BÍBLIA", "Membro/Aluno", "Criar Cliente","Assinaturas", "Link de Pagamento"],
-        "cliente": ["Home", "Membro/Aluno"],
+        "parceiro": ["Apresentação", "MESTRE BÍBLIA", "Membro/Aluno", "Criar Cliente","Assinaturas", "Link de Pagamento"],
+        "cliente": ["Membro/Aluno", "Apresentação"],
     }
 
     paginas_permitidas = permissao_usuario.get(user_role, [])
 
     pages = {
-        "Home": showHome,
+        "Apresentação": showHome,
         "MESTRE BÍBLIA": showMestre,
         "Membro/Aluno": showMembroAluno,
         "Criar Cliente": showCliente,
