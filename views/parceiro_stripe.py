@@ -114,7 +114,7 @@ def showParceiro():
             )
             try:
 
-                resultado = api_create_parceiro(parceiro)
+                resultado = asyncio.create_task(api_create_parceiro(parceiro))
                 st.success(f"Parceiro {resultado.nome} criado com sucesso!")
 
                 st.session_state.nome = ""
@@ -129,7 +129,7 @@ def showParceiro():
 
     if st.button("Listar"):
         try:
-            parceiros = api_fetch_parceiros(limit=limit)
+            parceiros = asyncio.create_task(api_fetch_parceiros(limit=limit))
             if parceiros:
                 data = []
                 for parceiro in parceiros:
