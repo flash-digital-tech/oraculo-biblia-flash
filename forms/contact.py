@@ -133,6 +133,7 @@ async def handle_create_customer(cliente):
             st.error(f"Erro: {str(e)}")
 
 
+@st.dialog("Cadastro")
 def cadastrar_cliente():
     st.title("Sistema Flash Pagamentos")
 
@@ -180,12 +181,29 @@ def cadastrar_cliente():
             whatsapp = st.text_input(label="WhatsApp", placeholder='Exemplo: 31900001111', value=st.session_state.whatsapp)
 
         with col3:
-            endereco = st.text_input("Endereço", value=st.session_state.endereco)
-            bairro = st.text_input("Bairro", value=st.session_state.bairro)
-            password = st.text_input("Digite uma senha:", type="password", value=st.session_state.password)
+            endereco = st.text_input("Endereço", value=st.session_state.get("endereco", ""))
+            bairro = st.text_input("Bairro", value=st.session_state.get("bairro", ""))
+            password = st.text_input("Digite uma senha:", type="password", value=st.session_state.get("password", ""))
             uploaded_file = st.file_uploader("Escolha uma imagem de perfil", type=["jpg", "jpeg", "png"])
+        
             if uploaded_file is not None:
                 st.session_state.image = uploaded_file  # Armazena o arquivo de imagem no session_state
+        
+                # Salva a imagem com o nome de usuário
+                username = st.session_state.username  # Certifique-se de que o username está previamente definido
+                if username:
+                    directory = "./src/img/cliente"
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
+        
+                    # Salva a imagem no formato desejado
+                    image_path = os.path.join(directory, f"{username}.png")  # ou .jpg, conforme necessário
+                    image = Image.open(uploaded_file)
+                    image.save(image_path)
+        
+                    st.success(f"Imagem salva em: {image_path}")
+                else:
+                    st.warning("Por favor, insira um nome de usuário antes de fazer o upload da imagem.")
 
         with col4:
             cep = st.text_input("CEP", value=st.session_state.cep)
@@ -286,6 +304,12 @@ def is_valid_email(email):
     return re.match(email_pattern, email) is not None
 
 
+def is_valid_email(email):
+    # Basic regex pattern for email validation
+    email_pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(email_pattern, email) is not None
+
+
 def contact_form():
     with st.form("contact_form"):
         name = st.text_input("Nome e Sobrenome")
@@ -324,22 +348,23 @@ def contact_form():
             st.error("Desculpe-me, parece que houve um problema no envio da sua mensagem", icon="😨")
 
 
+@st.dialog("Agendamento")
 def agendar_reuniao():
     global is_in_scheduling
     is_in_scheduling = True
 
     st.title('Agendar Reunião')
     with st.form("cadastro_reuniao"):
-        name = st.text_input("Nome")
-        whatsapp = st.text_input("WhatsApp")
-        whatsapp = st.text_input("E-mail")
-        endereco = st.text_input("Endereço")
-        message = st.text_area("Envie sua mensagem")
+        name = st.text_input("Nome:")
+        whatsapp = st.text_input("WhatsApp:")
+        email = st.text_input("E-mail:")
+        endereco = st.text_input("Endereço:")
+        message = st.text_area("Mensagem:")
         submit_button = st.form_submit_button("ENVIAR")
 
     if submit_button:
         if not WEBHOOK_URL:
-            st.error("Email service is not set up. Please try again later.", icon="📧")
+            st.error("O Webhook deverá ser configurado", icon="📧")
             st.stop()
 
         if not name:
@@ -350,19 +375,23 @@ def agendar_reuniao():
             st.error("Digite seu WhatsApp.", icon="📨")
             st.stop()
 
+        if not email:
+            st.error("Digite seu e-mail.", icon="📨")
+            st.stop()
+
         if not endereco:
             st.error("Digite seu endereço com o nome do bairro.", icon="📨")
             st.stop()
 
         if not message:
-            st.error("Deixe sua observação caso tenha.", icon="💬")
+            st.error("Deixe sua mensagem.", icon="💬")
             st.stop()
 
         # Prepare the data payload and send it to the specified webhook URL
-        data = {"Nome": name, "WhatsApp": whatsapp, "Endereço": endereco}
+        data = {"Nome": name, "WhatsApp": whatsapp, "Email": email, "Endereço": endereco, "Mensagem": message}
         response = requests.post(WEBHOOK_URL, json=data)
 
         if response.status_code == 200:
-            st.success("A sua mensagem foi enviada com sucesso! 🎉", icon="🚀")
+            st.success("A sua mensagem foi enviada, o Alan entrará em contato! 🎉", icon="🚀")
         else:
             st.error("Desculpe-me, parece que houve um problema no envio da sua mensagem", icon="😨")
