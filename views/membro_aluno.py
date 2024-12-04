@@ -10,7 +10,7 @@ import stripe
 from util import carregar_arquivos
 import os
 import glob
-from forms.contact import cadastrar_cliente
+from forms.contact import cadastrar_cliente, agendar_reuniao 
 
 
 import replicate
@@ -45,26 +45,10 @@ if replicate_api is None:
 #######################################################################################################################
 
 def showMembroAluno():
-    # Carregar apenas a aba "Dados" do arquivo Excel
-    #df_dados = pd.read_excel('./conhecimento/medicos_dados_e_links.xlsx', sheet_name='Dados')
 
-    # Converter o DataFrame para um arquivo de texto, por exemplo, CSV
-    #df_dados.to_csv('./conhecimento/medicos_dados_e_links.txt', sep=' ', index=False, header=True)
-
-    # Se preferir usar tabulações como delimitador, substitua sep=' ' por sep='\t'
-    # df_dados.to_csv('./conhecimento/CatalogoMed_Sudeste_Dados.txt', sep='\t', index=False, header=True)
-
-    # Especifica o caminho para o arquivo .txt
-    #caminho_arquivo = './conhecimento/medicos_dados_e_links.txt'
-
-    # Abre o arquivo no modo de leitura ('r')
-    #with open(caminho_arquivo, 'r', encoding='utf-8') as arquivo:
-        # Lê todo o conteúdo do arquivo e armazena na variável conteudo
-        #info = arquivo.read()
-
-    # Exibe o conteúdo do arquivo
-    #df_txt = info
-
+    if "image" not in st.session_state:
+        st.session_state.image = None
+    
     def ler_arquivos_txt(pasta):
         """
         Lê todos os arquivos .txt na pasta especificada e retorna uma lista com o conteúdo de cada arquivo.
@@ -94,6 +78,30 @@ def showMembroAluno():
     # Exemplo de uso da função
     pasta_conhecimento = './conhecimento'  # Caminho da pasta onde os arquivos .txt estão localizados
     conteudos_txt = ler_arquivos_txt(pasta_conhecimento)
+
+    is_in_registration = False
+    is_in_scheduling = False
+
+
+    # Função para verificar se a pergunta está relacionada a cadastro
+    def is_health_question(prompt):
+        keywords = ["cadastrar", "inscrição", "quero me cadastrar", "gostaria de me registrar",
+                    "desejo me cadastrar", "quero fazer o cadastro", "quero me registrar", "quero me increver",
+                    "desejo me registrar", "desejo me inscrever","eu quero me cadastrar", "eu desejo me cadastrar",
+                    "eu desejo me registrar", "eu desejo me inscrever", "eu quero me registrar", "eu desejo me registrar",
+                    "eu quero me inscrever"]
+        return any(keyword.lower() in prompt.lower() for keyword in keywords)
+
+    #Função que analisa desejo de agendar uma reunião
+    def is_schedule_meeting_question(prompt):
+        keywords = [
+            "agendar reunião", "quero agendar uma reunião", "gostaria de agendar uma reunião",
+            "desejo agendar uma reunião", "quero marcar uma reunião", "gostaria de marcar uma reunião",
+            "desejo marcar uma reunião", "posso agendar uma reunião", "posso marcar uma reunião",
+            "Eu gostaria de agendar uma reuniao", "eu quero agendar", "eu quero agendar uma reunião,",
+            "quero reunião"
+        ]
+        return any(keyword.lower() in prompt.lower() for keyword in keywords)
 
     # Atualizando o system_prompt
     system_prompt = f'''
@@ -126,11 +134,6 @@ def showMembroAluno():
     - "Olá, sou o MESTRE BÍBLIA. O tema de estudo deste mês é a carta de Filipenses. Como posso ajudá-lo a compreender melhor os ensinamentos desta carta e suas aplicações práticas em sua vida?"
     
     '''
-
-
-    # Set assistant icon to Snowflake logo
-    icons = {"assistant": "./src/img/mestre-biblia.png", "user": "./src/img/perfil-usuario.png"}
-
 
     st.markdown(
         """
@@ -207,12 +210,27 @@ def showMembroAluno():
     # Store LLM-generated responses
     if "messages" not in st.session_state.keys():
         st.session_state.messages = [{
-            "role": "assistant", "content": 'Olá! Sou o MESTRE BÍBLIA, seu guia espiritual e oráculo bíblico, '
+            "role": "assistant", "content": '🌟 Bem-vindo ao Mestre Bíblia! Seu guia espiritual e oráculo bíblico, '
                     'pronto para ajudá-lo a compreender as Escrituras.'}]
 
-    # Display or clear chat messages
+    # Dicionário de ícones
+    icons = {
+        "assistant": "./src/img/mestre-biblia.png",  # Ícone padrão do assistente
+        "user": "./src/img/perfil-usuario.png"            # Ícone padrão do usuário
+    }
+    
+    # Caminho para a imagem padrão
+    default_avatar_path = "./src/img/perfil-usuario.png"
+    
+    # Exibição das mensagens
     for message in st.session_state.messages:
-        with st.chat_message(message["role"], avatar=icons[message["role"]]):
+        if message["role"] == "user":
+            # Verifica se a imagem do usuário existe
+            avatar_image = st.session_state.image if "image" in st.session_state and st.session_state.image else default_avatar_path
+        else:
+            avatar_image = icons["assistant"]  # Ícone padrão do assistente
+    
+        with st.chat_message(message["role"], avatar=avatar_image):
             st.write(message["content"])
 
 
@@ -273,6 +291,13 @@ def showMembroAluno():
         prompt.append("")
         prompt_str = "\n".join(prompt)
 
+        if is_health_question(prompt_str):
+            cadastrar_cliente()
+
+
+        if is_schedule_meeting_question(prompt_str):
+            agendar_reuniao()
+
         for event in replicate.stream(
                 "meta/meta-llama-3.1-405b-instruct",
                 input={
@@ -288,29 +313,30 @@ def showMembroAluno():
             yield str(event)
 
 
-    # User-provided prompt
-    if prompt := st.chat_input(disabled=not replicate_api, key='prompt_user'):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="./src/img/perfil-usuario.png"):
-            st.write(prompt)
-
-
-    # Gera uma nova resposta se a última mensagem não for do assistente
-    try:
-        # Verifica se a lista de mensagens não está vazia
-        if st.session_state.messages and "role" in st.session_state.messages[-1]:
-            if st.session_state.messages[-1]["role"] != "assistant":
-                with st.chat_message("assistant", avatar="./src/img/mestre-biblia.png"):
-                    response = generate_arctic_response()
-                    full_response = st.write_stream(response)
-                message = {"role": "assistant", "content": full_response}
-                st.session_state.messages.append(message)
+    def get_avatar_image():
+        """Retorna a imagem do usuário ou a imagem padrão se não houver imagem cadastrada."""
+        if st.session_state.image is not None:
+            return st.session_state.image  # Retorna a imagem cadastrada
         else:
-            st.warning("Não há mensagens disponíveis ou a estrutura da última mensagem está incorreta.")
-    except IndexError:
-        st.warning("Ocorreu um erro ao acessar a última mensagem: lista vazia.")
-    except KeyError as ke:
-        st.warning(f"Ocorreu um erro: {str(ke)}. A estrutura da mensagem pode estar incorreta.")
+            return default_avatar_path  # Retorna a imagem padrão
+    
+    # User-provided prompt
+    if prompt := st.chat_input(disabled=not replicate_api):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Chama a função para obter a imagem correta
+        avatar_image = get_avatar_image()
+        
+        with st.chat_message("user", avatar=avatar_image):
+            st.write(prompt)
+    
+    # Generate a new response if last message is not from assistant
+    if st.session_state.messages[-1]["role"] != "assistant":
+        with st.chat_message("assistant", avatar="./src/img/mestre-biblia.png"):
+            response = generate_arctic_response()
+            full_response = st.write_stream(response)
+        message = {"role": "assistant", "content": full_response}
+        st.session_state.messages.append(message)
 
 
 
