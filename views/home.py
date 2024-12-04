@@ -115,10 +115,10 @@ def showHome():
     # --- BOTÃO DE INSCRIÇÃO ---
     if st.button("✉️ INSCREVA-SE AGORA"):
         # Chama a função de cadastro que contém o modal
-        nome, whatsapp, endereco = cadastrar_cliente()  # Modifique a função para retornar os valores
+        nome, whatsapp, email, endereco, username, password, image = cadastrar_cliente()  # Modifique a função para retornar os valores
 
         # Verifica se os campos foram preenchidos
-        if nome and whatsapp and endereco:
+        if nome and whatsapp and email and endereco and username and password and image:
             # Se todos os campos foram preenchidos, exibe a mensagem de sucesso
             st.success("Cadastro feito com sucesso!!!")
         else:
