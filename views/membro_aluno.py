@@ -222,7 +222,7 @@ def showMembroAluno():
     # Caminho para a imagem padrão
     default_avatar_path = "./src/img/perfil-usuario.png"
     
-    # Exibição das mensagens
+     # Exibição das mensagens
     for message in st.session_state.messages:
         if message["role"] == "user":
             # Verifica se a imagem do usuário existe
@@ -231,7 +231,6 @@ def showMembroAluno():
             avatar_image = icons["assistant"]  # Ícone padrão do assistente
     
         with st.chat_message(message["role"], avatar=avatar_image):
-            st.image(avatar_image, width=50)
             st.write(message["content"])
 
 
