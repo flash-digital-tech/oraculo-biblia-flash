@@ -323,15 +323,15 @@ def showMembroAluno():
     # User-provided prompt
     if prompt := st.chat_input(disabled=not replicate_api):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        
+    
         # Chama a função para obter a imagem correta
         avatar_image = get_avatar_image()
-        
+    
         with st.chat_message("user", avatar=avatar_image):
             st.write(prompt)
     
     # Generate a new response if last message is not from assistant
-    if st.session_state.messages[-1]["role"] != "assistant":
+    if st.session_state.messages and st.session_state.messages[-1]["role"] != "assistant":
         with st.chat_message("assistant", avatar="./src/img/mestre-biblia.png"):
             response = generate_arctic_response()
             full_response = st.write_stream(response)
